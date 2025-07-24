@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -15,20 +16,24 @@ namespace CifkorTask.Model
             _url = url;
         }
 
-        public void AddRequest() => base.AddRequest(_url);
+        public async UniTaskVoid AddRequest() => base.AddRequest(_url);
 
         protected override void OnCompleteResponse(UnityWebRequest request)
         {
-            WeatherResponse response = JsonUtility.FromJson<WeatherResponse>(request.downloadHandler.text);
-
-            if (response == null || response.Properties == null || response.Properties.Periods.Length == 0)
+            try
             {
-                Debug.LogError("Invalid weather data format");
-                return;
-            }
+                WeatherResponse response = JsonUtility.FromJson<WeatherResponse>(request.downloadHandler.text);
 
-            ForecastPeriod today = response.Properties.Periods[0];
-            ResponseReceived?.Invoke(today);
+                if (response == null || response.properties == null || response.properties.periods.Length == 0)
+                    throw new ArgumentNullException(nameof(response));
+
+                ForecastPeriod today = response.properties.periods[0];
+                ResponseReceived?.Invoke(today);
+            } 
+            catch(Exception exception)
+            {
+                Debug.LogError(exception.Message);
+            }
         }
 
         protected override void OnFailedResponse(UnityWebRequest request)

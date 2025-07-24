@@ -20,7 +20,7 @@ public class WeatherPresenter : MonoBehaviour
     public void Change() 
     {
         _text.text = $"Сегодня - {_data.Temperature}{_data.TemperatureUnit}";
-        _icon.sprite = _icon.sprite;
+        _icon.sprite = _data.Icon;
     }
 
     private void OnValidate() =>

@@ -1,21 +1,21 @@
-using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine.Networking;
 
 namespace CifkorTask.Model
 {
     public abstract class Requester
     {
-        private RequestPool _requestPool;
+        protected RequestPool RequestPool;
 
         public Requester(RequestPool requestPool)
         {
-            _requestPool = requestPool;
+            RequestPool = requestPool;
         }
 
-        public void AddRequest(string url)
+        public virtual async UniTaskVoid AddRequest(string url)
         {
-            UnityWebRequest request = new UnityWebRequest(url);
-            _requestPool.PutRequest(request, OnCompleteResponse, OnFailedResponse);
+            UnityWebRequest request = UnityWebRequest.Get(url);
+            await RequestPool.PutRequest(request, OnCompleteResponse, OnFailedResponse);
         }
 
         protected abstract void OnCompleteResponse(UnityWebRequest request);

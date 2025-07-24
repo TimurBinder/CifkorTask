@@ -1,7 +1,7 @@
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-using UnityEngine;
+using System.Threading;
 using UnityEngine.Networking;
 
 public class RequestPool
@@ -9,13 +9,16 @@ public class RequestPool
     private Queue<RequestItem> _queue;
     private bool _isProcessing = false;
     private int _millisecondsDelay;
+    private CancellationTokenSource _cancellationTokenSource;
 
     public RequestPool(int millisecondsDelay)
     {
         _millisecondsDelay = millisecondsDelay;
+        _queue = new Queue<RequestItem>();
+        _cancellationTokenSource = new CancellationTokenSource();
     }
 
-    public async Task PutRequest(
+    public async UniTask PutRequest(
         UnityWebRequest request,
         Action<UnityWebRequest> onComplete = null,
         Action<UnityWebRequest> onError = null
@@ -37,22 +40,34 @@ public class RequestPool
         }
 
         _isProcessing = false;
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource?.Dispose();
     }
 
-    private async Task ProcessQueue()
+    private async UniTask ProcessQueue()
     {
         _isProcessing = true;
 
         while (_queue.Count > 0)
         {
-            RequestItem item = _queue.Peek();
-            await item.Request.SendWebRequest();
-            _queue.Dequeue();
-            item.Request.Dispose();
-            await Task.Delay(_millisecondsDelay);
+            CancellationToken cancellationToken = _cancellationTokenSource.Token;
+            await ProcessItem(_queue.Dequeue(), cancellationToken);
+            await UniTask.Delay(_millisecondsDelay, cancellationToken: cancellationToken);
         }
 
         _isProcessing = false;
+    }
+
+    private async UniTask ProcessItem(RequestItem item, CancellationToken cancellationToken)
+    {
+        await item.Request.SendWebRequest().ToUniTask(cancellationToken: cancellationToken);
+
+        if (item.Request.result == UnityWebRequest.Result.Success)
+            item.OnComplete?.Invoke(item.Request);
+        else
+            item.OnError?.Invoke(item.Request);
+
+        item.Request.Dispose();
     }
 
     private class RequestItem

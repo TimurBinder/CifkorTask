@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using System;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -11,9 +12,16 @@ namespace CifkorTask.Model
         public ImageRequester(RequestPool requestPool) : base(requestPool)
         {}
 
+        public async override UniTaskVoid AddRequest(string url)
+        {
+            UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+            await RequestPool.PutRequest(request, OnCompleteResponse, OnFailedResponse);
+        }
+
         protected override void OnCompleteResponse(UnityWebRequest request)
         {
             Texture2D texture = DownloadHandlerTexture.GetContent(request);
+            
             float centerPivot = 0.5f;
 
             Sprite sprite = Sprite.Create(

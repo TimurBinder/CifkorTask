@@ -23,8 +23,7 @@ namespace CifkorTask.Model
             _imageRequester = imageRequester;
             _requester.ResponseReceived += Update;
             _requestDelay = requestDelay;
-            _requestTimer = 0;
-            _requester.AddRequest();
+            _requestTimer = _requestDelay;
         }
 
         ~WeatherData()
@@ -49,9 +48,9 @@ namespace CifkorTask.Model
 
         private void Update(ForecastPeriod forecastPeriod)
         {
-            Temperature = forecastPeriod.Temperature;
-            TemperatureUnit = forecastPeriod.TemperatureUnit;
-            _imageRequester.AddRequest(forecastPeriod.Icon);
+            Temperature = forecastPeriod.temperature;
+            TemperatureUnit = forecastPeriod.temperatureUnit;
+            _imageRequester.AddRequest(forecastPeriod.icon);
             _imageRequester.ImageLoaded += LoadIcon;
         }
 
